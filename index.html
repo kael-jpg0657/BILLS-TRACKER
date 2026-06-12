@@ -752,6 +752,25 @@ function load() {
     loans = structuredClone(DEFAULT_LOANS);
     settings = { dark: true, notif: false };
   }
+  migrateLoans();
+}
+// Fill in missing installment fields for loans saved before this feature existed
+function migrateLoans() {
+  let changed = false;
+  loans.forEach(loan => {
+    if (loan.installmentAmount === undefined) { loan.installmentAmount = 0; changed = true; }
+    if (loan.installmentsTotal === undefined) { loan.installmentsTotal = 0; changed = true; }
+    if (loan.installmentsCompleted === undefined) { loan.installmentsCompleted = 0; changed = true; }
+    // Restore known defaults for the original seeded loans if they're still at 0
+    const defaults = DEFAULT_LOANS.find(d => d.id === loan.id);
+    if (defaults && loan.installmentsTotal === 0 && defaults.installmentsTotal > 0) {
+      loan.installmentAmount = defaults.installmentAmount;
+      loan.installmentsTotal = defaults.installmentsTotal;
+      loan.installmentsCompleted = defaults.installmentsCompleted;
+      changed = true;
+    }
+  });
+  if (changed) save();
 }
 function save() {
   localStorage.setItem('bt_bills', JSON.stringify(bills));
