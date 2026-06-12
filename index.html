@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Bills">
+<meta name="theme-color" content="#6c63ff" id="themeColorMeta">
+<link rel="manifest" href="manifest.json">
+<title>Monthly Bill Tracker</title>
+<style>
+:root {
+  --accent: #6c63ff;
+  --accent2: #a78bfa;
+  --danger: #ff5b5b;
+  --warn: #ffb347;
+  --success: #4ade80;
+  --bg: #0f0f13;
+  --bg2: #18181f;
+  --bg3: #22222d;
+  --card: #1e1e28;
+  --border: rgba(255,255,255,0.07);
+  --text: #f0f0f5;
+  --text2: #9191a8;
+  --text3: #5a5a72;
+  --shadow: 0 8px 32px rgba(0,0,0,0.4);
+  --radius: 18px;
+  --radius-sm: 12px;
+  --font: -apple-system, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+}
+.light {
+  --bg: #f2f2f7;
+  --bg2: #e8e8ef;
+  --bg3: #dcdce8;
+  --card: #ffffff;
+  --border: rgba(0,0,0,0.07);
+  --text: #1c1c1e;
+  --text2: #6b6b80;
+  --text3: #a0a0b8;
+  --shadow: 0 8px 32px rgba(0,0,0,0.1);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html { height: 100%; font-size: 16px; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  overflow-x: hidden;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* HEADER */
+.app-header {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  padding: env(safe-area-inset-top, 0) 20px 0;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+.header-inner {
+  display: flex; align-items: center; justify-content: space-between;
+  height: 56px;
+}
+.header-title {
+  font-size: 20px; font-weight: 700; letter-spacing: -0.3px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.header-actions { display: flex; gap: 8px; }
+.icon-btn {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: var(--bg3); border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text); font-size: 16px; transition: all 0.2s;
+}
+.icon-btn:active { transform: scale(0.9); }
+
+/* NAV TABS */
+.nav-tabs {
+  display: flex; gap: 0;
+  overflow-x: auto; scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.nav-tabs::-webkit-scrollbar { display: none; }
+.nav-tab {
+  flex: 0 0 auto; padding: 12px 16px;
+  font-size: 13px; font-weight: 600;
+  color: var(--text3); border: none; background: none;
+  cursor: pointer; border-bottom: 2px solid transparent;
+  transition: all 0.2s; white-space: nowrap;
+}
+.nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* MAIN */
+main { padding: 16px; padding-bottom: calc(env(safe-area-inset-bottom, 0) + 80px); }
+.section { display: none; }
+.section.active { display: block; }
+
+/* DASHBOARD */
+.month-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--card); border-radius: var(--radius); padding: 14px 18px;
+  margin-bottom: 16px; box-shadow: var(--shadow);
+}
+.month-label { font-size: 17px; font-weight: 700; }
+.month-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--bg3); border: none; cursor: pointer;
+  color: var(--text); font-size: 18px; display: flex;
+  align-items: center; justify-content: center; transition: all 0.2s;
+}
+.month-btn:active { transform: scale(0.88); background: var(--accent); color: #fff; }
+
+.stats-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  margin-bottom: 16px;
+}
+.stat-card {
+  background: var(--card); border-radius: var(--radius);
+  padding: 18px 16px; box-shadow: var(--shadow);
+  position: relative; overflow: hidden;
+}
+.stat-card::before {
+  content: ''; position: absolute; top: -20px; right: -20px;
+  width: 70px; height: 70px; border-radius: 50%;
+  opacity: 0.12;
+}
+.stat-card.total::before { background: var(--accent); }
+.stat-card.paid::before { background: var(--success); }
+.stat-card.remaining::before { background: var(--danger); }
+.stat-card.upcoming::before { background: var(--warn); }
+.stat-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text2); margin-bottom: 6px; }
+.stat-value { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+.stat-card.total .stat-value { color: var(--accent); }
+.stat-card.paid .stat-value { color: var(--success); }
+.stat-card.remaining .stat-value { color: var(--danger); }
+.stat-card.upcoming .stat-value { color: var(--warn); }
+
+.section-title {
+  font-size: 16px; font-weight: 700; margin: 20px 0 12px;
+  display: flex; align-items: center; gap: 8px; color: var(--text);
+}
+.section-title span { font-size: 12px; font-weight: 500; color: var(--text3); }
+
+.upcoming-list { display: flex; flex-direction: column; gap: 10px; }
+.upcoming-item {
+  background: var(--card); border-radius: var(--radius-sm);
+  padding: 14px 16px; display: flex; align-items: center; gap: 12px;
+  box-shadow: var(--shadow);
+}
+.upcoming-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+}
+.upcoming-info { flex: 1; min-width: 0; }
+.upcoming-name { font-size: 14px; font-weight: 600; }
+.upcoming-date { font-size: 12px; color: var(--text2); margin-top: 2px; }
+.upcoming-amount { font-size: 15px; font-weight: 700; }
+
+/* BILLS TABLE */
+.bills-toolbar {
+  display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap;
+}
+.filter-btn {
+  padding: 7px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+  border: 1.5px solid var(--border); background: var(--card);
+  color: var(--text2); cursor: pointer; transition: all 0.2s;
+}
+.filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.sort-select {
+  padding: 7px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
+  border: 1.5px solid var(--border); background: var(--card);
+  color: var(--text2); cursor: pointer; outline: none; margin-left: auto;
+  appearance: none; -webkit-appearance: none;
+}
+
+.add-bill-btn {
+  width: 100%; padding: 14px; border-radius: var(--radius);
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none; color: #fff; font-size: 15px; font-weight: 700;
+  cursor: pointer; margin-bottom: 14px; transition: all 0.2s;
+  box-shadow: 0 4px 20px rgba(108,99,255,0.4);
+}
+.add-bill-btn:active { transform: scale(0.97); }
+
+.bills-list { display: flex; flex-direction: column; gap: 12px; }
+.bill-card {
+  background: var(--card); border-radius: var(--radius);
+  padding: 16px; box-shadow: var(--shadow);
+  border-left: 4px solid transparent; transition: all 0.3s;
+  cursor: pointer; position: relative;
+}
+.bill-card.paid { border-left-color: var(--success); }
+.bill-card.unpaid { border-left-color: var(--text3); }
+.bill-card.overdue { border-left-color: var(--danger); }
+.bill-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.bill-name { font-size: 16px; font-weight: 700; }
+.bill-amount { font-size: 18px; font-weight: 800; color: var(--accent); }
+.bill-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.bill-meta-item { }
+.bill-meta-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text3); margin-bottom: 2px; }
+.bill-meta-value { font-size: 13px; font-weight: 500; color: var(--text2); }
+.status-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
+}
+.status-badge.paid { background: rgba(74,222,128,0.15); color: var(--success); }
+.status-badge.unpaid { background: rgba(145,145,168,0.15); color: var(--text2); }
+.status-badge.overdue { background: rgba(255,91,91,0.15); color: var(--danger); }
+.bill-notes { font-size: 12px; color: var(--text3); margin-top: 8px; font-style: italic; }
+.bill-actions {
+  display: flex; gap: 8px; margin-top: 12px; padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.bill-action-btn {
+  flex: 1; padding: 8px; border-radius: var(--radius-sm);
+  font-size: 12px; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s;
+}
+.bill-action-btn.edit { background: var(--bg3); color: var(--text2); }
+.bill-action-btn.delete { background: rgba(255,91,91,0.12); color: var(--danger); }
+.bill-action-btn.toggle-paid { background: rgba(74,222,128,0.12); color: var(--success); }
+
+/* LOANS */
+.loan-card {
+  background: var(--card); border-radius: var(--radius);
+  padding: 20px; box-shadow: var(--shadow); margin-bottom: 14px;
+}
+.loan-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+.loan-name { font-size: 18px; font-weight: 800; }
+.loan-pct { font-size: 28px; font-weight: 900; color: var(--accent); }
+.loan-amounts { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.loan-amt-item { text-align: center; }
+.loan-amt-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text3); margin-bottom: 4px; font-weight: 600; }
+.loan-amt-value { font-size: 14px; font-weight: 700; }
+.loan-amt-value.red { color: var(--danger); }
+.loan-amt-value.green { color: var(--success); }
+.progress-bar {
+  height: 10px; background: var(--bg3); border-radius: 10px; overflow: hidden; margin-bottom: 8px;
+}
+.progress-fill {
+  height: 100%; border-radius: 10px;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.loan-edit-row { display: flex; gap: 8px; margin-top: 14px; }
+.loan-input {
+  flex: 1; padding: 10px 12px; border-radius: var(--radius-sm);
+  background: var(--bg3); border: 1.5px solid var(--border);
+  color: var(--text); font-size: 13px; outline: none; transition: border 0.2s;
+}
+.loan-input:focus { border-color: var(--accent); }
+.loan-save-btn {
+  padding: 10px 18px; border-radius: var(--radius-sm);
+  background: var(--accent); border: none; color: #fff;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+}
+
+/* CALENDAR */
+.cal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--card); border-radius: var(--radius);
+  padding: 14px 18px; margin-bottom: 14px; box-shadow: var(--shadow);
+}
+.cal-title { font-size: 17px; font-weight: 700; }
+.cal-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
+  background: var(--card); border-radius: var(--radius); padding: 14px;
+  box-shadow: var(--shadow);
+}
+.cal-day-name { text-align: center; font-size: 11px; font-weight: 600; color: var(--text3); padding: 4px 0 8px; }
+.cal-day {
+  aspect-ratio: 1; border-radius: 50%; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: all 0.2s; position: relative;
+}
+.cal-day.today { background: var(--accent); color: #fff; font-weight: 700; }
+.cal-day.other-month { color: var(--text3); }
+.cal-day.has-bill::after {
+  content: ''; position: absolute; bottom: 3px;
+  width: 5px; height: 5px; border-radius: 50%;
+}
+.cal-day.bill-paid::after { background: var(--success); }
+.cal-day.bill-upcoming::after { background: var(--warn); }
+.cal-day.bill-overdue::after { background: var(--danger); }
+.cal-legend { display: flex; gap: 14px; margin-top: 14px; justify-content: center; }
+.legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text2); }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+.cal-bills-popup {
+  background: var(--card); border-radius: var(--radius);
+  padding: 16px; margin-top: 14px; box-shadow: var(--shadow);
+  display: none;
+}
+.cal-bills-popup.visible { display: block; }
+.cal-popup-title { font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+.cal-popup-item { padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.cal-popup-item:last-child { border-bottom: none; }
+
+/* MODAL */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.6); backdrop-filter: blur(8px);
+  display: flex; align-items: flex-end; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.3s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal {
+  width: 100%; max-width: 480px;
+  background: var(--bg2); border-radius: 24px 24px 0 0;
+  padding: 8px 20px 40px;
+  transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  max-height: 90vh; overflow-y: auto;
+}
+.modal-overlay.open .modal { transform: translateY(0); }
+.modal-handle {
+  width: 36px; height: 4px; background: var(--text3); border-radius: 4px;
+  margin: 12px auto 20px;
+}
+.modal-title { font-size: 20px; font-weight: 800; margin-bottom: 20px; }
+.form-group { margin-bottom: 16px; }
+.form-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text2); margin-bottom: 6px; display: block; }
+.form-input, .form-select {
+  width: 100%; padding: 13px 16px; border-radius: var(--radius-sm);
+  background: var(--bg3); border: 1.5px solid var(--border);
+  color: var(--text); font-size: 15px; outline: none; transition: border 0.2s;
+  appearance: none; -webkit-appearance: none; font-family: var(--font);
+}
+.form-input:focus, .form-select:focus { border-color: var(--accent); }
+.form-input[type="date"] { color-scheme: dark; }
+.light .form-input[type="date"] { color-scheme: light; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.modal-actions { display: flex; gap: 10px; margin-top: 24px; }
+.btn-primary {
+  flex: 2; padding: 14px; border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border: none; color: #fff; font-size: 15px; font-weight: 700;
+  cursor: pointer; transition: all 0.2s;
+}
+.btn-secondary {
+  flex: 1; padding: 14px; border-radius: var(--radius-sm);
+  background: var(--bg3); border: none; color: var(--text2);
+  font-size: 15px; font-weight: 600; cursor: pointer;
+}
+
+/* SETTINGS */
+.settings-card {
+  background: var(--card); border-radius: var(--radius);
+  padding: 0 16px; box-shadow: var(--shadow); margin-bottom: 14px;
+}
+.settings-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 0; border-bottom: 1px solid var(--border);
+}
+.settings-row:last-child { border-bottom: none; }
+.settings-label { font-size: 15px; font-weight: 500; }
+.settings-sub { font-size: 12px; color: var(--text2); margin-top: 2px; }
+.toggle {
+  width: 50px; height: 28px; border-radius: 14px;
+  background: var(--bg3); position: relative; cursor: pointer;
+  transition: background 0.3s; flex-shrink: 0; border: none; padding: 0;
+}
+.toggle.on { background: var(--accent); }
+.toggle::after {
+  content: ''; position: absolute; top: 3px; left: 3px;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: #fff; transition: transform 0.3s;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+.toggle.on::after { transform: translateX(22px); }
+.settings-btn {
+  padding: 9px 18px; border-radius: var(--radius-sm);
+  background: var(--bg3); border: none; color: var(--text);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.settings-btn.danger { background: rgba(255,91,91,0.12); color: var(--danger); }
+
+/* TOAST */
+.toast {
+  position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--text); color: var(--bg); padding: 12px 20px;
+  border-radius: 20px; font-size: 14px; font-weight: 600;
+  z-index: 300; opacity: 0; transition: all 0.3s; pointer-events: none;
+  white-space: nowrap;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* BOTTOM NAV */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  padding: 8px 0 env(safe-area-inset-bottom, 8px);
+  display: flex; justify-content: space-around; z-index: 100;
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+}
+.bottom-nav-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  gap: 3px; padding: 6px; border: none; background: none;
+  color: var(--text3); cursor: pointer; transition: all 0.2s; font-size: 10px; font-weight: 600;
+}
+.bottom-nav-btn .nav-icon { font-size: 22px; transition: transform 0.2s; }
+.bottom-nav-btn.active { color: var(--accent); }
+.bottom-nav-btn.active .nav-icon { transform: scale(1.15); }
+
+/* REMINDER POPUP */
+.reminder-popup {
+  position: fixed; top: 80px; left: 16px; right: 16px; z-index: 150;
+  background: var(--card); border-radius: var(--radius);
+  padding: 16px 18px; box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  border-left: 4px solid var(--warn);
+  transform: translateY(-20px); opacity: 0; transition: all 0.4s;
+  display: none;
+}
+.reminder-popup.show { transform: translateY(0); opacity: 1; display: block; }
+.reminder-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.reminder-body { font-size: 13px; color: var(--text2); }
+.reminder-close { position: absolute; top: 12px; right: 14px; background: none; border: none; cursor: pointer; color: var(--text3); font-size: 18px; }
+
+/* EMPTY STATE */
+.empty-state {
+  text-align: center; padding: 48px 20px; color: var(--text3);
+}
+.empty-icon { font-size: 48px; margin-bottom: 12px; }
+.empty-text { font-size: 15px; font-weight: 500; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="header-inner">
+    <div class="header-title">₱ Bill Tracker</div>
+    <div class="header-actions">
+      <button class="icon-btn" id="themeToggleBtn" title="Toggle theme">🌙</button>
+      <button class="icon-btn" id="notifBtn" title="Notifications">🔔</button>
+    </div>
+  </div>
+  <nav class="nav-tabs" id="navTabs">
+    <button class="nav-tab active" data-section="dashboard">Dashboard</button>
+    <button class="nav-tab" data-section="bills">Bills</button>
+    <button class="nav-tab" data-section="loans">Loans</button>
+    <button class="nav-tab" data-section="calendar">Calendar</button>
+    <button class="nav-tab" data-section="settings">Settings</button>
+  </nav>
+</div>
+
+<main>
+  <!-- DASHBOARD -->
+  <section class="section active" id="dashboard">
+    <div class="month-nav">
+      <button class="month-btn" id="prevMonth">‹</button>
+      <div class="month-label" id="monthLabel">—</div>
+      <button class="month-btn" id="nextMonth">›</button>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card total">
+        <div class="stat-label">Total Bills</div>
+        <div class="stat-value" id="statTotal">₱0</div>
+      </div>
+      <div class="stat-card paid">
+        <div class="stat-label">Paid</div>
+        <div class="stat-value" id="statPaid">₱0</div>
+      </div>
+      <div class="stat-card remaining">
+        <div class="stat-label">Remaining</div>
+        <div class="stat-value" id="statRemaining">₱0</div>
+      </div>
+      <div class="stat-card upcoming">
+        <div class="stat-label">Due Soon</div>
+        <div class="stat-value" id="statUpcoming">0 bills</div>
+      </div>
+    </div>
+    <div class="section-title">Upcoming this Week <span id="upcomingCount"></span></div>
+    <div class="upcoming-list" id="upcomingList">
+      <div class="empty-state"><div class="empty-icon">✅</div><div class="empty-text">No bills due this week</div></div>
+    </div>
+  </section>
+
+  <!-- BILLS -->
+  <section class="section" id="bills">
+    <button class="add-bill-btn" id="addBillBtn">+ Add New Bill</button>
+    <div class="bills-toolbar">
+      <button class="filter-btn active" data-filter="all">All</button>
+      <button class="filter-btn" data-filter="Paid">Paid</button>
+      <button class="filter-btn" data-filter="Unpaid">Unpaid</button>
+      <button class="filter-btn" data-filter="Overdue">Overdue</button>
+      <select class="sort-select" id="sortSelect">
+        <option value="dueDate">Sort: Due Date</option>
+        <option value="amount">Sort: Amount</option>
+        <option value="name">Sort: Name</option>
+      </select>
+    </div>
+    <div class="bills-list" id="billsList"></div>
+  </section>
+
+  <!-- LOANS -->
+  <section class="section" id="loans">
+    <div class="section-title">Loan Progress Tracker</div>
+    <div id="loansList"></div>
+  </section>
+
+  <!-- CALENDAR -->
+  <section class="section" id="calendar">
+    <div class="cal-header">
+      <button class="month-btn" id="calPrev">‹</button>
+      <div class="cal-title" id="calTitle">—</div>
+      <button class="month-btn" id="calNext">›</button>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--success)"></div>Paid</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--warn)"></div>Upcoming</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--danger)"></div>Overdue</div>
+    </div>
+    <div class="cal-bills-popup" id="calPopup">
+      <div class="cal-popup-title" id="calPopupTitle"></div>
+      <div id="calPopupItems"></div>
+    </div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section class="section" id="settings">
+    <div class="section-title">Preferences</div>
+    <div class="settings-card">
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Dark Mode</div>
+          <div class="settings-sub">Toggle app theme</div>
+        </div>
+        <button class="toggle" id="darkModeToggle"></button>
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Push Notifications</div>
+          <div class="settings-sub">Bill reminders</div>
+        </div>
+        <button class="toggle" id="notifToggle"></button>
+      </div>
+    </div>
+    <div class="section-title">Data</div>
+    <div class="settings-card">
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Export Backup</div>
+          <div class="settings-sub">Download JSON file</div>
+        </div>
+        <button class="settings-btn" id="exportBtn">Export</button>
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Import Data</div>
+          <div class="settings-sub">Restore from JSON</div>
+        </div>
+        <button class="settings-btn" id="importBtn">Import</button>
+        <input type="file" id="importFile" accept=".json" style="display:none">
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Monthly Reset</div>
+          <div class="settings-sub">Clear paid status for new month</div>
+        </div>
+        <button class="settings-btn" id="resetBtn">Reset</button>
+      </div>
+      <div class="settings-row">
+        <div>
+          <div class="settings-label">Clear All Data</div>
+          <div class="settings-sub">Permanently delete everything</div>
+        </div>
+        <button class="settings-btn danger" id="clearBtn">Clear</button>
+      </div>
+    </div>
+    <div class="section-title">About</div>
+    <div class="settings-card">
+      <div class="settings-row">
+        <div class="settings-label">Monthly Bill Tracker</div>
+        <div style="font-size:12px;color:var(--text3)">v1.0</div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="bottom-nav-btn active" data-section="dashboard">
+    <span class="nav-icon">📊</span>Dashboard
+  </button>
+  <button class="bottom-nav-btn" data-section="bills">
+    <span class="nav-icon">📋</span>Bills
+  </button>
+  <button class="bottom-nav-btn" data-section="loans">
+    <span class="nav-icon">💳</span>Loans
+  </button>
+  <button class="bottom-nav-btn" data-section="calendar">
+    <span class="nav-icon">📅</span>Calendar
+  </button>
+  <button class="bottom-nav-btn" data-section="settings">
+    <span class="nav-icon">⚙️</span>Settings
+  </button>
+</nav>
+
+<!-- BILL MODAL -->
+<div class="modal-overlay" id="billModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modalTitle">Add Bill</div>
+    <div class="form-group">
+      <label class="form-label">Bill Name</label>
+      <input type="text" class="form-input" id="billName" placeholder="e.g. Meralco">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Amount (₱)</label>
+        <input type="number" class="form-input" id="billAmount" placeholder="0.00">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select class="form-select" id="billStatus">
+          <option value="Unpaid">Unpaid</option>
+          <option value="Paid">Paid</option>
+          <option value="Overdue">Overdue</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Due Date</label>
+        <input type="date" class="form-input" id="billDueDate">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Date Paid</label>
+        <input type="date" class="form-input" id="billDatePaid">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes</label>
+      <input type="text" class="form-input" id="billNotes" placeholder="Optional note...">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="modalCancel">Cancel</button>
+      <button class="btn-primary" id="modalSave">Save Bill</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+<!-- REMINDER -->
+<div class="reminder-popup" id="reminderPopup">
+  <button class="reminder-close" id="reminderClose">×</button>
+  <div class="reminder-title" id="reminderTitle"></div>
+  <div class="reminder-body" id="reminderBody"></div>
+</div>
+
+<script>
+// ── HELPERS (must be defined first) ───────────────────────────────────────────
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+function currentMonthKey(d = new Date()) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
+function fmt(n) { return '₱' + Number(n||0).toLocaleString('en-PH', {minimumFractionDigits:0}); }
+function fmtDate(s) { if (!s) return '—'; const d=new Date(s+'T00:00:00'); return d.toLocaleDateString('en-PH',{month:'short',day:'numeric'}); }
+
+// ── DEFAULTS ──────────────────────────────────────────────────────────────────
+const DEFAULT_BILLS = [
+  { id: uid(), name: 'Bahay', amount: 5000, dueDate: '', datePaid: '', status: 'Unpaid', notes: '', month: currentMonthKey() },
+  { id: uid(), name: 'Wifi', amount: 1299, dueDate: '', datePaid: '', status: 'Unpaid', notes: '', month: currentMonthKey() },
+  { id: uid(), name: 'SpayLater', amount: 500, dueDate: '', datePaid: '', status: 'Unpaid', notes: '', month: currentMonthKey() },
+  { id: uid(), name: 'RCBC Loan', amount: 3500, dueDate: '', datePaid: '', status: 'Unpaid', notes: '', month: currentMonthKey() },
+  { id: uid(), name: 'Home Credit', amount: 2800, dueDate: '', datePaid: '', status: 'Unpaid', notes: '', month: currentMonthKey() },
+];
+const DEFAULT_LOANS = [
+  { id: 'rcbc', name: 'RCBC Loan', total: 100000, remaining: 75000 },
+  { id: 'hc', name: 'Home Credit', total: 50000, remaining: 32000 },
+];
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let bills = [];
+let loans = [];
+let settings = { dark: true, notif: false };
+let activeFilter = 'all';
+let currentSection = 'dashboard';
+let viewMonth = new Date();
+let calMonth = new Date();
+let editingId = null;
+
+// ── STORAGE ───────────────────────────────────────────────────────────────────
+function load() {
+  try {
+    bills = JSON.parse(localStorage.getItem('bt_bills') || 'null') || structuredClone(DEFAULT_BILLS);
+    loans = JSON.parse(localStorage.getItem('bt_loans') || 'null') || structuredClone(DEFAULT_LOANS);
+    settings = JSON.parse(localStorage.getItem('bt_settings') || 'null') || { dark: true, notif: false };
+  } catch(e) {
+    bills = structuredClone(DEFAULT_BILLS);
+    loans = structuredClone(DEFAULT_LOANS);
+    settings = { dark: true, notif: false };
+  }
+}
+function save() {
+  localStorage.setItem('bt_bills', JSON.stringify(bills));
+  localStorage.setItem('bt_loans', JSON.stringify(loans));
+  localStorage.setItem('bt_settings', JSON.stringify(settings));
+}
+
+// ── THEME ─────────────────────────────────────────────────────────────────────
+function applyTheme() {
+  document.body.classList.toggle('light', !settings.dark);
+  document.getElementById('themeToggleBtn').textContent = settings.dark ? '🌙' : '☀️';
+  const dm = document.getElementById('darkModeToggle');
+  dm.classList.toggle('on', settings.dark);
+  document.getElementById('themeColorMeta').content = settings.dark ? '#0f0f13' : '#f2f2f7';
+}
+
+// ── NAVIGATION ────────────────────────────────────────────────────────────────
+function switchSection(name) {
+  currentSection = name;
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(name).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.section === name));
+  document.querySelectorAll('.bottom-nav-btn').forEach(b => b.classList.toggle('active', b.dataset.section === name));
+  renderSection(name);
+}
+document.querySelectorAll('.nav-tab, .bottom-nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchSection(btn.dataset.section));
+});
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+// ── MONTH NAV ─────────────────────────────────────────────────────────────────
+function updateMonthLabel() {
+  document.getElementById('monthLabel').textContent =
+    viewMonth.toLocaleDateString('en-PH', { month: 'long', year: 'numeric' });
+}
+document.getElementById('prevMonth').onclick = () => { viewMonth.setMonth(viewMonth.getMonth()-1); updateMonthLabel(); renderSection('dashboard'); };
+document.getElementById('nextMonth').onclick = () => { viewMonth.setMonth(viewMonth.getMonth()+1); updateMonthLabel(); renderSection('dashboard'); };
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────────
+function renderDashboard() {
+  const mk = currentMonthKey(viewMonth);
+  const monthBills = bills.filter(b => (b.month||currentMonthKey()) === mk);
+  const total = monthBills.reduce((a,b) => a + Number(b.amount||0), 0);
+  const paid = monthBills.filter(b=>b.status==='Paid').reduce((a,b)=>a+Number(b.amount||0),0);
+  const remaining = total - paid;
+  const now = new Date();
+  const upcoming = monthBills.filter(b => {
+    if (!b.dueDate || b.status === 'Paid') return false;
+    const d = new Date(b.dueDate+'T00:00:00');
+    const diff = (d - now) / 86400000;
+    return diff >= 0 && diff <= 7;
+  });
+  document.getElementById('statTotal').textContent = fmt(total);
+  document.getElementById('statPaid').textContent = fmt(paid);
+  document.getElementById('statRemaining').textContent = fmt(remaining);
+  document.getElementById('statUpcoming').textContent = upcoming.length + ' bill' + (upcoming.length!==1?'s':'');
+  document.getElementById('upcomingCount').textContent = upcoming.length ? `(${upcoming.length})` : '';
+
+  const ul = document.getElementById('upcomingList');
+  if (!upcoming.length) {
+    ul.innerHTML = '<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-text">No bills due this week</div></div>';
+    return;
+  }
+  ul.innerHTML = upcoming.sort((a,b)=>a.dueDate.localeCompare(b.dueDate)).map(b => {
+    const d = new Date(b.dueDate+'T00:00:00');
+    const diff = Math.round((d - now) / 86400000);
+    const color = diff <= 1 ? 'var(--danger)' : diff <= 3 ? 'var(--warn)' : 'var(--accent)';
+    const label = diff === 0 ? 'Due today!' : diff === 1 ? 'Tomorrow' : `In ${diff} days`;
+    return `<div class="upcoming-item">
+      <div class="upcoming-dot" style="background:${color}"></div>
+      <div class="upcoming-info">
+        <div class="upcoming-name">${b.name}</div>
+        <div class="upcoming-date">${fmtDate(b.dueDate)} · ${label}</div>
+      </div>
+      <div class="upcoming-amount" style="color:${color}">${fmt(b.amount)}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── BILLS ─────────────────────────────────────────────────────────────────────
+function autoUpdateOverdue() {
+  const now = new Date(); now.setHours(0,0,0,0);
+  bills.forEach(b => {
+    if (b.status !== 'Paid' && b.dueDate) {
+      const d = new Date(b.dueDate+'T00:00:00');
+      if (d < now) b.status = 'Overdue';
+    }
+  });
+  save();
+}
+
+function renderBills() {
+  const mk = currentMonthKey(viewMonth);
+  let list = bills.filter(b => (b.month||currentMonthKey()) === mk);
+  if (activeFilter !== 'all') list = list.filter(b => b.status === activeFilter);
+  const sort = document.getElementById('sortSelect').value;
+  list.sort((a,b) => {
+    if (sort === 'amount') return Number(b.amount||0) - Number(a.amount||0);
+    if (sort === 'name') return a.name.localeCompare(b.name);
+    return (a.dueDate||'9').localeCompare(b.dueDate||'9');
+  });
+
+  const el = document.getElementById('billsList');
+  if (!list.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-text">No bills found</div></div>';
+    return;
+  }
+  el.innerHTML = list.map(b => {
+    const sc = b.status.toLowerCase();
+    const isPaid = b.status === 'Paid';
+    return `<div class="bill-card ${sc}" data-id="${b.id}">
+      <div class="bill-card-header">
+        <div class="bill-name">${b.name}</div>
+        <div class="bill-amount">${fmt(b.amount)}</div>
+      </div>
+      <div class="bill-meta">
+        <div class="bill-meta-item">
+          <div class="bill-meta-label">Due Date</div>
+          <div class="bill-meta-value">${fmtDate(b.dueDate)}</div>
+        </div>
+        <div class="bill-meta-item">
+          <div class="bill-meta-label">Date Paid</div>
+          <div class="bill-meta-value">${fmtDate(b.datePaid)}</div>
+        </div>
+        <div class="bill-meta-item">
+          <div class="bill-meta-label">Status</div>
+          <div class="bill-meta-value">
+            <span class="status-badge ${sc}">
+              ${sc==='paid'?'✓':sc==='overdue'?'⚠':''} ${b.status}
+            </span>
+          </div>
+        </div>
+        ${b.notes ? `<div class="bill-meta-item"><div class="bill-meta-label">Notes</div><div class="bill-meta-value" style="color:var(--text3)">${b.notes}</div></div>` : ''}
+      </div>
+      <div class="bill-actions">
+        <button class="bill-action-btn toggle-paid" onclick="togglePaid('${b.id}')">${isPaid ? 'Mark Unpaid' : 'Mark Paid'}</button>
+        <button class="bill-action-btn edit" onclick="openEditModal('${b.id}')">Edit</button>
+        <button class="bill-action-btn delete" onclick="deleteBill('${b.id}')">Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function togglePaid(id) {
+  const b = bills.find(x=>x.id===id);
+  if (!b) return;
+  if (b.status === 'Paid') { b.status = 'Unpaid'; b.datePaid = ''; }
+  else { b.status = 'Paid'; b.datePaid = new Date().toISOString().slice(0,10); }
+  save(); renderSection(currentSection);
+  showToast(b.status === 'Paid' ? '✅ Marked as paid' : '↩ Marked as unpaid');
+}
+function deleteBill(id) {
+  if (!confirm('Delete this bill?')) return;
+  bills = bills.filter(b => b.id !== id);
+  save(); renderSection(currentSection); showToast('🗑 Bill deleted');
+}
+
+// Filter
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeFilter = btn.dataset.filter;
+    renderBills();
+  });
+});
+document.getElementById('sortSelect').onchange = () => renderBills();
+
+// ── MODAL ─────────────────────────────────────────────────────────────────────
+function openAddModal() {
+  editingId = null;
+  document.getElementById('modalTitle').textContent = 'Add Bill';
+  document.getElementById('billName').value = '';
+  document.getElementById('billAmount').value = '';
+  document.getElementById('billStatus').value = 'Unpaid';
+  document.getElementById('billDueDate').value = '';
+  document.getElementById('billDatePaid').value = '';
+  document.getElementById('billNotes').value = '';
+  document.getElementById('billModal').classList.add('open');
+}
+function openEditModal(id) {
+  const b = bills.find(x=>x.id===id);
+  if (!b) return;
+  editingId = id;
+  document.getElementById('modalTitle').textContent = 'Edit Bill';
+  document.getElementById('billName').value = b.name;
+  document.getElementById('billAmount').value = b.amount;
+  document.getElementById('billStatus').value = b.status;
+  document.getElementById('billDueDate').value = b.dueDate || '';
+  document.getElementById('billDatePaid').value = b.datePaid || '';
+  document.getElementById('billNotes').value = b.notes || '';
+  document.getElementById('billModal').classList.add('open');
+}
+function closeModal() { document.getElementById('billModal').classList.remove('open'); }
+
+document.getElementById('addBillBtn').onclick = openAddModal;
+document.getElementById('modalCancel').onclick = closeModal;
+document.getElementById('billModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('billModal')) closeModal();
+});
+document.getElementById('modalSave').onclick = () => {
+  const name = document.getElementById('billName').value.trim();
+  const amount = document.getElementById('billAmount').value;
+  if (!name) { showToast('⚠ Enter a bill name'); return; }
+  if (!amount || isNaN(amount)) { showToast('⚠ Enter a valid amount'); return; }
+  const mk = currentMonthKey(viewMonth);
+  if (editingId) {
+    const b = bills.find(x=>x.id===editingId);
+    if (b) {
+      b.name = name; b.amount = Number(amount);
+      b.status = document.getElementById('billStatus').value;
+      b.dueDate = document.getElementById('billDueDate').value;
+      b.datePaid = document.getElementById('billDatePaid').value;
+      b.notes = document.getElementById('billNotes').value.trim();
+    }
+    showToast('✏️ Bill updated');
+  } else {
+    bills.push({
+      id: uid(), name, amount: Number(amount),
+      status: document.getElementById('billStatus').value,
+      dueDate: document.getElementById('billDueDate').value,
+      datePaid: document.getElementById('billDatePaid').value,
+      notes: document.getElementById('billNotes').value.trim(),
+      month: mk
+    });
+    showToast('✅ Bill added');
+  }
+  save(); closeModal(); renderSection(currentSection);
+};
+
+// ── LOANS ─────────────────────────────────────────────────────────────────────
+function renderLoans() {
+  const el = document.getElementById('loansList');
+  el.innerHTML = loans.map(loan => {
+    const paid = loan.total - loan.remaining;
+    const pct = loan.total > 0 ? Math.min(100, Math.round((paid / loan.total) * 100)) : 0;
+    return `<div class="loan-card">
+      <div class="loan-header">
+        <div>
+          <div class="loan-name">${loan.name}</div>
+          <div style="font-size:13px;color:var(--text2);margin-top:4px">Loan Progress</div>
+        </div>
+        <div class="loan-pct">${pct}%</div>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div class="loan-amounts">
+        <div class="loan-amt-item">
+          <div class="loan-amt-label">Total</div>
+          <div class="loan-amt-value">${fmt(loan.total)}</div>
+        </div>
+        <div class="loan-amt-item">
+          <div class="loan-amt-label">Paid</div>
+          <div class="loan-amt-value green">${fmt(paid)}</div>
+        </div>
+        <div class="loan-amt-item">
+          <div class="loan-amt-label">Remaining</div>
+          <div class="loan-amt-value red">${fmt(loan.remaining)}</div>
+        </div>
+      </div>
+      <div class="loan-edit-row">
+        <input type="number" class="loan-input" placeholder="Total Amount" id="lt_${loan.id}" value="${loan.total}">
+        <input type="number" class="loan-input" placeholder="Remaining" id="lr_${loan.id}" value="${loan.remaining}">
+        <button class="loan-save-btn" onclick="saveLoan('${loan.id}')">Save</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function saveLoan(id) {
+  const loan = loans.find(l=>l.id===id);
+  if (!loan) return;
+  const total = Number(document.getElementById('lt_'+id).value);
+  const remaining = Number(document.getElementById('lr_'+id).value);
+  if (isNaN(total)||isNaN(remaining)||remaining<0||total<0) { showToast('⚠ Enter valid amounts'); return; }
+  if (remaining > total) { showToast('⚠ Remaining cannot exceed Total'); return; }
+  loan.total = total; loan.remaining = remaining;
+  save(); renderLoans(); showToast('💳 Loan updated');
+}
+
+// ── CALENDAR ──────────────────────────────────────────────────────────────────
+function renderCalendar() {
+  const y = calMonth.getFullYear(), m = calMonth.getMonth();
+  document.getElementById('calTitle').textContent =
+    calMonth.toLocaleDateString('en-PH', { month: 'long', year: 'numeric' });
+
+  const first = new Date(y, m, 1).getDay();
+  const days = new Date(y, m+1, 0).getDate();
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  // Build bill date map
+  const billMap = {};
+  bills.forEach(b => {
+    if (!b.dueDate) return;
+    const d = new Date(b.dueDate+'T00:00:00');
+    if (d.getFullYear()===y && d.getMonth()===m) {
+      const key = d.getDate();
+      if (!billMap[key]) billMap[key] = [];
+      billMap[key].push(b);
+    }
+  });
+
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let html = dayNames.map(d=>`<div class="cal-day-name">${d}</div>`).join('');
+
+  // Empty slots before first day
+  for (let i=0; i<first; i++) html += '<div class="cal-day other-month"></div>';
+
+  for (let d=1; d<=days; d++) {
+    const thisDate = new Date(y,m,d); thisDate.setHours(0,0,0,0);
+    const isToday = thisDate.getTime() === today.getTime();
+    const dayBills = billMap[d] || [];
+    let cls = 'cal-day';
+    if (isToday) cls += ' today';
+    if (dayBills.length) {
+      cls += ' has-bill';
+      const hasOverdue = dayBills.some(b=>b.status==='Overdue');
+      const hasPaid = dayBills.every(b=>b.status==='Paid');
+      if (hasOverdue) cls += ' bill-overdue';
+      else if (hasPaid) cls += ' bill-paid';
+      else cls += ' bill-upcoming';
+    }
+    html += `<div class="${cls}" onclick="showCalPopup(${d})">${d}</div>`;
+  }
+  document.getElementById('calGrid').innerHTML = html;
+  document.getElementById('calPopup').classList.remove('visible');
+}
+function showCalPopup(day) {
+  const y = calMonth.getFullYear(), m = calMonth.getMonth();
+  const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+  const dayBills = bills.filter(b => b.dueDate === dateStr);
+  if (!dayBills.length) { document.getElementById('calPopup').classList.remove('visible'); return; }
+  document.getElementById('calPopupTitle').textContent = fmtDate(dateStr);
+  document.getElementById('calPopupItems').innerHTML = dayBills.map(b =>
+    `<div class="cal-popup-item">
+      <span class="status-badge ${b.status.toLowerCase()}">${b.status}</span>
+      <strong> ${b.name}</strong> — ${fmt(b.amount)}
+    </div>`
+  ).join('');
+  document.getElementById('calPopup').classList.add('visible');
+}
+document.getElementById('calPrev').onclick = () => { calMonth.setMonth(calMonth.getMonth()-1); renderCalendar(); };
+document.getElementById('calNext').onclick = () => { calMonth.setMonth(calMonth.getMonth()+1); renderCalendar(); };
+
+// ── RENDER SECTION ────────────────────────────────────────────────────────────
+function renderSection(name) {
+  if (name==='dashboard') renderDashboard();
+  else if (name==='bills') renderBills();
+  else if (name==='loans') renderLoans();
+  else if (name==='calendar') renderCalendar();
+}
+
+// ── SETTINGS ──────────────────────────────────────────────────────────────────
+document.getElementById('themeToggleBtn').onclick = () => {
+  settings.dark = !settings.dark; save(); applyTheme();
+};
+document.getElementById('darkModeToggle').onclick = () => {
+  settings.dark = !settings.dark; save(); applyTheme();
+};
+
+document.getElementById('exportBtn').onclick = () => {
+  const data = JSON.stringify({ bills, loans, settings, exported: new Date().toISOString() }, null, 2);
+  const a = document.createElement('a');
+  a.href = 'data:application/json,' + encodeURIComponent(data);
+  a.download = 'bill-tracker-backup.json';
+  a.click();
+  showToast('📤 Backup exported');
+};
+document.getElementById('importBtn').onclick = () => document.getElementById('importFile').click();
+document.getElementById('importFile').onchange = e => {
+  const file = e.target.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = ev => {
+    try {
+      const d = JSON.parse(ev.target.result);
+      if (d.bills) bills = d.bills;
+      if (d.loans) loans = d.loans;
+      if (d.settings) settings = d.settings;
+      save(); applyTheme(); renderSection(currentSection);
+      showToast('📥 Data imported');
+    } catch { showToast('⚠ Invalid backup file'); }
+  };
+  r.readAsText(file);
+  e.target.value = '';
+};
+
+document.getElementById('resetBtn').onclick = () => {
+  if (!confirm('Reset all bills to Unpaid for this month?')) return;
+  const mk = currentMonthKey(viewMonth);
+  bills.filter(b=>b.month===mk).forEach(b=>{ b.status='Unpaid'; b.datePaid=''; });
+  save(); renderSection(currentSection); showToast('🔄 Monthly reset done');
+};
+document.getElementById('clearBtn').onclick = () => {
+  if (!confirm('Delete ALL data permanently? This cannot be undone.')) return;
+  bills=[]; loans=structuredClone(DEFAULT_LOANS);
+  save(); renderSection(currentSection); showToast('🗑 All data cleared');
+};
+
+// ── NOTIFICATIONS ─────────────────────────────────────────────────────────────
+async function requestNotif() {
+  if (!('Notification' in window)) { showToast('⚠ Notifications not supported'); return false; }
+  const perm = await Notification.requestPermission();
+  return perm === 'granted';
+}
+document.getElementById('notifBtn').onclick = async () => {
+  const ok = await requestNotif();
+  if (ok) { settings.notif = true; save(); updateNotifToggle(); showToast('🔔 Notifications enabled'); scheduleReminders(); }
+  else showToast('⚠ Notification permission denied');
+};
+document.getElementById('notifToggle').onclick = async () => {
+  if (!settings.notif) {
+    const ok = await requestNotif();
+    if (ok) { settings.notif = true; save(); showToast('🔔 Notifications enabled'); scheduleReminders(); }
+    else showToast('⚠ Permission denied');
+  } else {
+    settings.notif = false; save(); showToast('🔕 Notifications disabled');
+  }
+  updateNotifToggle();
+};
+function updateNotifToggle() {
+  document.getElementById('notifToggle').classList.toggle('on', settings.notif);
+}
+function scheduleReminders() {
+  if (navigator.serviceWorker.controller) {
+    navigator.serviceWorker.controller.postMessage({ type: 'SCHEDULE_NOTIFICATIONS', bills });
+  }
+}
+
+// ── IN-APP REMINDER ───────────────────────────────────────────────────────────
+function checkInAppReminders() {
+  const now = new Date(); now.setHours(0,0,0,0);
+  const urgent = bills.filter(b => {
+    if (!b.dueDate || b.status === 'Paid') return false;
+    const d = new Date(b.dueDate+'T00:00:00');
+    const diff = Math.round((d - now) / 86400000);
+    return diff >= 0 && diff <= 3;
+  });
+  if (!urgent.length) return;
+  const b = urgent[0];
+  const d = new Date(b.dueDate+'T00:00:00');
+  const diff = Math.round((d - now) / 86400000);
+  document.getElementById('reminderTitle').textContent = diff===0 ? `⚠️ Due Today: ${b.name}` : `📅 ${b.name} due in ${diff} day${diff>1?'s':''}`;
+  document.getElementById('reminderBody').textContent = `Amount: ${fmt(b.amount)}` + (urgent.length>1 ? ` (+${urgent.length-1} more)` : '');
+  const popup = document.getElementById('reminderPopup');
+  popup.style.display='block';
+  setTimeout(()=>popup.classList.add('show'),50);
+}
+document.getElementById('reminderClose').onclick = () => {
+  const popup = document.getElementById('reminderPopup');
+  popup.classList.remove('show');
+  setTimeout(()=>popup.style.display='none',400);
+};
+
+// ── SERVICE WORKER ────────────────────────────────────────────────────────────
+async function registerSW() {
+  if (!('serviceWorker' in navigator)) return;
+  try {
+    const reg = await navigator.serviceWorker.register('./sw.js');
+    console.log('SW registered', reg.scope);
+  } catch(e) { console.warn('SW failed:', e); }
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+function init() {
+  load();
+  autoUpdateOverdue();
+  applyTheme();
+  updateNotifToggle();
+  updateMonthLabel();
+  renderDashboard();
+  renderBills();
+  setTimeout(checkInAppReminders, 1200);
+  registerSW();
+  if (settings.notif && Notification.permission === 'granted') scheduleReminders();
+
+  // Ask notification permission on first load
+  if (!localStorage.getItem('bt_notif_asked') && 'Notification' in window) {
+    localStorage.setItem('bt_notif_asked', '1');
+    setTimeout(async () => {
+      const ok = await requestNotif();
+      if (ok) { settings.notif = true; save(); updateNotifToggle(); scheduleReminders(); showToast('🔔 Reminders enabled'); }
+    }, 3000);
+  }
+}
+
+init();
+</script>
+</body>
+</html>
